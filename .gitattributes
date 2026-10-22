@@ -1,0 +1,3 @@
+# Las librerías de vendor/ deben conservar sus bytes exactos al clonar o hacer checkout
+# (vendor/README.md documenta sus hashes SHA-256; la conversión LF -> CRLF los cambiaría).
+vendor/* -text

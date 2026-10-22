@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Declaración de Renta (Colombia)</title>
+<link rel="stylesheet" href="src/presentacion/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <h1>Declaración de Renta · Colombia</h1>
+    <div class="topbar-actions">
+      <button id="btn-config" class="btn btn-secondary">Configuración (UVT)</button>
+      <button id="btn-abrir-documento" class="btn btn-secondary"
+        title="Abre un documento de Excel exportado por esta app para seguir trabajando en él">Abrir documento</button>
+      <input type="file" id="input-abrir-documento" accept=".xlsx" hidden />
+      <button id="btn-nueva" class="btn btn-primary">+ Nueva declaración</button>
+    </div>
+  </header>
+
+  <div class="disclaimer">
+    Esta herramienta calcula un <strong>estimado</strong> del impuesto de renta de personas
+    naturales (cédula general, pensiones y dividendos) para ayudarte a diligenciar el
+    Formulario 210 de la DIAN. No reemplaza asesoría profesional ni la normativa vigente:
+    verifica siempre las tarifas, topes y el valor de la UVT antes de presentar tu declaración.
+  </div>
+
+  <div class="layout">
+    <main class="contenido">
+      <form id="form-declaracion" autocomplete="off">
+        <div id="banner-info" class="banner-info" hidden></div>
+        <nav class="tabs" id="tabs">
+          <button type="button" class="tab-btn active" data-tab="documentos">Documentos</button>
+          <button type="button" class="tab-btn" data-tab="general">Datos generales</button>
+          <button type="button" class="tab-btn" data-tab="patrimonio">Patrimonio</button>
+          <button type="button" class="tab-btn" data-tab="ingresos">Ingresos</button>
+          <button type="button" class="tab-btn" data-tab="deducciones">Deducciones y exentas</button>
+          <button type="button" class="tab-btn" data-tab="pensiones">Pensiones</button>
+          <button type="button" class="tab-btn" data-tab="dividendos">Dividendos</button>
+          <button type="button" class="tab-btn" data-tab="retenciones">Retenciones/Anticipos</button>
+          <button type="button" class="tab-btn" data-tab="resultado">Resultado</button>
+        </nav>
+
+        <section class="tab-panel active" data-tab="documentos">
+          <section class="guia-documentos">
+            <h3><span class="paso">1</span>Qué necesitas antes de empezar</h3>
+            <p class="hint">Con datos a 31 de diciembre del año que vas a declarar.</p>
+
+            <div class="guia-columnas">
+              <div class="guia-tarjeta guia-obligatorio">
+                <span class="guia-etiqueta">Obligatorio</span>
+                <p class="guia-sub">Para usar esta app</p>
+                <ul>
+                  <li>
+                    <strong>Exógena de la DIAN</strong>
+                    <span>El Excel «Información reportada por terceros». Trae ingresos, retenciones, saldos de bancos y avalúos.</span>
+                    <em>Súbela en el paso 2</em>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="guia-tarjeta guia-aconsejado">
+                <span class="guia-etiqueta">Aconsejado</span>
+                <p class="guia-sub">Ayudan a completar y verificar</p>
+                <ul>
+                  <li>
+                    <strong>Certificados bancarios</strong>
+                    <span>Intereses ganados, saldos, deudas y tarjetas.</span>
+                    <em>Pestaña Patrimonio</em>
+                  </li>
+                  <li>
+                    <strong>Declaración del año anterior</strong>
+                    <span>Saldo a favor, anticipo y patrimonio de partida.</span>
+                    <em>Pestaña Retenciones</em>
+                  </li>
+                  <li>
+                    <strong>Certificado de ingresos y retenciones</strong>
+                    <span>Si tienes empleador (Formulario 220): cesantías y promedio de 6 meses.</span>
+                    <em>Pestaña Ingresos</em>
+                  </li>
+                  <li>
+                    <strong>Certificados de deducciones</strong>
+                    <span>Intereses de vivienda, medicina prepagada y aportes voluntarios (AFC o pensión).</span>
+                    <em>Pestaña Deducciones</em>
+                  </li>
+                </ul>
+              </div>
+
+              <div class="guia-tarjeta guia-informas">
+                <span class="guia-etiqueta">Lo informas tú</span>
+                <p class="guia-sub">La exógena no lo trae</p>
+                <ul>
+                  <li>
+                    <strong>Dependientes</strong>
+                    <span>Cuántos y quiénes, con sus soportes (registro civil, certificado de estudios o de contador).</span>
+                    <em>Pestaña Deducciones</em>
+                  </li>
+                  <li>
+                    <strong>Casas, carros e inversiones</strong>
+                    <span>Costo de compra y mejoras (se declara el mayor entre costo y avalúo), cesantías en fondos y dinero prestado.</span>
+                    <em>Pestaña Patrimonio</em>
+                  </li>
+                  <li>
+                    <strong>Deudas con particulares</strong>
+                    <span>Las que ningún banco reporta.</span>
+                    <em>Pestaña Patrimonio</em>
+                  </li>
+                  <li>
+                    <strong>Costos y descuentos de ingresos no laborales</strong>
+                    <span>Estampillas, ICA y gastos, con el soporte de cada pagador.</span>
+                    <em>Pestaña Ingresos</em>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <p class="guia-nota"><strong>No lo necesitas:</strong> el informe de facturas electrónicas. La exógena ya trae ese total.</p>
+
+            <details class="guia-detalles">
+              <summary>Casos especiales</summary>
+              <ul>
+                <li><strong>Docente oficial (FOMAG):</strong> los intereses de las cesantías los paga el FOMAG, no la Secretaría de Educación. Pide el certificado del FOMAG (fomag.gov.co) y suma esos intereses a «Salarios» y a «Cesantías e intereses».</li>
+                <li><strong>Compraste o vendiste una casa o un carro este año:</strong> ten la escritura o la factura. Puede haber ganancia ocasional, que esta app aún no calcula.</li>
+                <li><strong>Dividendos o arriendos:</strong> pide el certificado de dividendos o la certificación de arrendamiento.</li>
+                <li><strong>RUT actualizado:</strong> lo pide la DIAN al presentar; esta app no lo usa.</li>
+              </ul>
+            </details>
+          </section>
+
+          <section class="subida-archivo">
+            <h3><span class="paso">2</span>Sube el archivo</h3>
+            <p class="hint">
+              Empieza por la exógena de la DIAN. También sirven el certificado de ingresos y retenciones
+              (PDF) u otro Excel. La app te muestra lo que encuentra y tú confirmas: no llena nada sin que
+              lo revises.
+            </p>
+            <div class="grid">
+              <label>Archivo (.xlsx, .xls, .csv o .pdf)
+                <input type="file" id="import-file" accept=".pdf,.xlsx,.xls,.csv" />
+              </label>
+            </div>
+            <button type="button" id="btn-analizar-archivo" class="btn btn-primary">
+              Analizar archivo
+            </button>
+            <p class="hint">
+              Con la exógena eliges campo por campo: reemplazar, sumar o no aplicar. Con PDF u otros Excel
+              los valores se suman a lo que ya tengas.
+            </p>
+            <div id="import-resultado"></div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab="general">
+          <h3>Datos generales</h3>
+          <div class="grid">
+            <label>Nombre de la persona/entidad
+              <input type="text" id="personaNombre" />
+            </label>
+            <label>Tipo de documento
+              <select id="tipoDocumento">
+                <option value="CC">Cédula de ciudadanía</option>
+                <option value="CE">Cédula de extranjería</option>
+                <option value="NIT">NIT</option>
+                <option value="Pasaporte">Pasaporte</option>
+              </select>
+            </label>
+            <label>Número de documento
+              <input type="text" id="numeroDocumento" />
+            </label>
+            <label>Año gravable
+              <input type="number" id="anioGravable" step="1" />
+            </label>
+          </div>
+          <label class="full">Notas
+            <textarea id="notas" rows="2"></textarea>
+          </label>
+        </section>
+
+        <section class="tab-panel" data-tab="patrimonio">
+          <h3>Patrimonio</h3>
+          <div class="grid">
+            <label>Total activos (patrimonio bruto)
+              <input type="number" id="p_activos" min="0" step="any" />
+            </label>
+            <label>Total pasivos (deudas)
+              <input type="number" id="p_pasivos" min="0" step="any" />
+            </label>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab="ingresos">
+          <h3>Rentas de trabajo (laborales)</h3>
+          <div class="grid">
+            <label>Salarios y pagos laborales (ingresos brutos)
+              <input type="number" id="i_lab_bruto" min="0" step="any" />
+            </label>
+            <label>Aportes obligatorios a salud y pensión
+              <input type="number" id="i_lab_aportes" min="0" step="any" />
+            </label>
+            <label>Auxilio de cesantías e intereses (total)
+              <input type="number" id="i_lab_cesantias" min="0" step="any" />
+            </label>
+            <label>Ingreso laboral promedio últimos 6 meses (Art. 206 num. 4)
+              <input type="number" id="i_lab_promedio6m" min="0" step="any" />
+            </label>
+          </div>
+          <p class="hint">
+            Estos dos últimos campos están en tu Certificado de Ingresos y Retenciones
+            (Formulario 220), casillas 47+48+49 y 59. Determinan qué tan exentas están tus
+            cesantías (100% si el promedio mensual no supera 350 UVT, con un porcentaje
+            decreciente hasta 650 UVT).
+          </p>
+          <h3>Rentas de capital</h3>
+          <div class="grid">
+            <label>Intereses y rendimientos financieros
+              <input type="number" id="i_cap_intereses" min="0" step="any" />
+            </label>
+            <label>Arriendos
+              <input type="number" id="i_cap_arriendos" min="0" step="any" />
+            </label>
+            <label>Otros ingresos de capital
+              <input type="number" id="i_cap_otros" min="0" step="any" />
+            </label>
+            <label>Ingresos no constitutivos de renta (capital)
+              <input type="number" id="i_cap_incrngo" min="0" step="any" />
+            </label>
+            <label>Costos y deducciones procedentes (capital)
+              <input type="number" id="i_cap_costos" min="0" step="any" />
+            </label>
+          </div>
+          <h3>Rentas no laborales</h3>
+          <div class="grid">
+            <label>Honorarios / servicios independientes
+              <input type="number" id="i_nolab_honorarios" min="0" step="any" />
+            </label>
+            <label>Otros ingresos no laborales
+              <input type="number" id="i_nolab_otros" min="0" step="any" />
+            </label>
+            <label>Ingresos no constitutivos de renta (no laboral)
+              <input type="number" id="i_nolab_incrngo" min="0" step="any" />
+            </label>
+            <label>Costos y deducciones procedentes (no laboral)
+              <input type="number" id="i_nolab_costos" min="0" step="any" />
+            </label>
+          </div>
+          <p class="hint">
+            "Costos y deducciones procedentes" son los gastos que realmente incurriste para
+            producir ese ingreso (ej. gastos asociados a honorarios, costo de bienes vendidos
+            en rentas no laborales) — se restan antes de calcular el impuesto. No confundir con
+            las deducciones especiales de la siguiente pestaña.
+          </p>
+        </section>
+
+        <section class="tab-panel" data-tab="deducciones">
+          <h3>Deducciones especiales</h3>
+          <div class="grid">
+            <label>Intereses de crédito de vivienda
+              <input type="number" id="d_vivienda" min="0" step="any" />
+            </label>
+            <label>Salud prepagada / medicina prepagada
+              <input type="number" id="d_salud" min="0" step="any" />
+            </label>
+            <label>Número de dependientes
+              <input type="number" id="d_dependientes" min="0" step="1" />
+            </label>
+            <label>Aportes voluntarios a pensión / cuentas AFC
+              <input type="number" id="d_voluntarios" min="0" step="any" />
+            </label>
+          </div>
+          <p class="hint">
+            La renta exenta laboral del 25% se calcula automáticamente restando primero el
+            INCRNGO, las deducciones especiales y las cesantías exentas (así lo exige el
+            instructivo oficial del Formulario 210). Todas las deducciones y exentas de esta
+            pestaña están sujetas al límite global del 40% del ingreso neto (máx. 1.340
+            UVT/año) — verás el ajuste aplicado en la pestaña Resultado si aplicara. Además,
+            por cada dependiente (hasta 4) se suma automáticamente un beneficio adicional de 72
+            UVT que NO está sujeto a ese límite global (es una adición directa a la casilla 92
+            del Formulario 210).
+          </p>
+
+          <h3>1% de compras con factura electrónica</h3>
+          <div class="grid">
+            <label>Total de compras que califican
+              <input type="number" id="d_compras_factura" min="0" step="any" />
+            </label>
+          </div>
+          <p class="hint">
+            Descuento del 1% (tope 240 UVT/año) sobre compras pagadas con tarjeta o medio
+            electrónico, con factura electrónica a tu nombre, que no hayas usado ya como
+            costo, deducción o renta exenta en otro lado. Consulta el total en el servicio
+            "Consulta Facturas electrónicas" del portal de la DIAN. Tampoco está sujeto al
+            límite global del 40%/1.340 UVT.
+          </p>
+
+          <h3>Renta exenta laboral manual (opcional)</h3>
+          <p class="hint">
+            La interacción exacta entre el 25% y las cesantías exentas depende de cálculos
+            mensuales que esta app no reproduce. Si ya conoces el valor real (de una
+            declaración anterior o de tu contador), actívalo aquí y la app lo usará en vez de
+            calcularlo — el resto del formulario (patrimonio, otras cédulas, impuesto,
+            retenciones) sigue funcionando igual.
+          </p>
+          <div class="grid">
+            <label>
+              <input type="checkbox" id="d_exenta_manual_activa" style="width:auto" />
+              Usar valor manual en vez del cálculo automático
+            </label>
+            <label>Renta exenta laboral (25% + cesantías) real
+              <input type="number" id="d_exenta_manual_valor" min="0" step="any" />
+            </label>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab="pensiones">
+          <h3>Ingresos por pensiones</h3>
+          <div class="grid">
+            <label>Ingreso bruto anual por pensión
+              <input type="number" id="pen_anual" min="0" step="any" />
+            </label>
+            <label>Ingreso bruto mensual promedio (opcional)
+              <input type="number" id="pen_mensual" min="0" step="any" />
+            </label>
+            <label>Ingresos no constitutivos de renta (aportes obligatorios a salud)
+              <input type="number" id="pen_incrngo" min="0" step="any" />
+            </label>
+          </div>
+          <p class="hint">
+            Si no indicas el promedio mensual, se calcula como el ingreso anual dividido en 12.
+            Las primeras 1.000 UVT mensuales de pensión, una vez descontados los aportes a salud,
+            están exentas.
+          </p>
+        </section>
+
+        <section class="tab-panel" data-tab="dividendos">
+          <h3>Dividendos y participaciones</h3>
+          <div class="grid">
+            <label>Dividendos gravables (2017 en adelante)
+              <input type="number" id="div_gravables" min="0" step="any" />
+            </label>
+            <label>Dividendos de 2016 y años anteriores
+              <input type="number" id="div_antiguos" min="0" step="any" />
+            </label>
+            <label>Tarifa aplicable a esos dividendos antiguos (%)
+              <input type="number" id="div_antiguos_tarifa" min="0" max="100" step="0.1" />
+            </label>
+          </div>
+          <p class="hint">
+            Los dividendos gravables desde 2017 se calculan por el método de tarifa marginal
+            conjunta (Art. 242 ET). Para dividendos de 2016 o anteriores, la tarifa depende de
+            si la utilidad ya fue gravada en la sociedad; indícala tú mismo (0%, 33% o 35% según
+            el caso) porque no se asume un valor por defecto.
+          </p>
+        </section>
+
+        <section class="tab-panel" data-tab="retenciones">
+          <h3>Retenciones y anticipos</h3>
+          <div class="grid">
+            <label>Retención en la fuente practicada
+              <input type="number" id="r_retencion" min="0" step="any" />
+            </label>
+            <label>Autorretenciones
+              <input type="number" id="r_autorretencion" min="0" step="any" />
+            </label>
+            <label>Anticipo de renta del año anterior
+              <input type="number" id="r_anticipo" min="0" step="any" />
+            </label>
+            <label>Saldo a favor del año anterior
+              <input type="number" id="r_saldofavor" min="0" step="any" />
+            </label>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-tab="resultado">
+          <h3>Resultado</h3>
+          <p class="hint">
+            Cuando termines, <strong>exporta el documento (Excel)</strong>: es tu copia de la
+            declaración. Su hoja «Formulario 210» trae las casillas con sus valores para digitarlas en
+            la DIAN, y puedes reabrirlo después con «Abrir documento».
+          </p>
+          <div id="avisos-calculo" class="avisos"></div>
+          <div id="resultado" class="resultado"></div>
+          <div class="form-actions">
+            <button type="button" id="btn-exportar-documento-resultado" class="btn btn-primary"
+              title="Descarga un Excel con las casillas del Formulario 210 y tus datos">
+              Exportar documento (Excel)
+            </button>
+            <button type="button" id="btn-copiar-resumen" class="btn btn-secondary">
+              Copiar resumen para la DIAN
+            </button>
+          </div>
+          <textarea id="resumen-texto" class="resumen-texto" rows="4" readonly hidden></textarea>
+        </section>
+
+        <div class="form-actions">
+          <button type="button" id="btn-exportar-documento" class="btn btn-primary"
+            title="Descarga un Excel con las casillas del Formulario 210 y tus datos">
+            Exportar documento (Excel)
+          </button>
+          <button type="button" id="btn-siguiente-anio" class="btn btn-secondary"
+            title="Copia patrimonio, dependientes y saldo a favor a una declaración del año siguiente">
+            Crear declaración del año siguiente
+          </button>
+        </div>
+      </form>
+    </main>
+  </div>
+
+  <footer class="pie">
+    Versión <span id="version-app"></span> · No guarda nada y no usa internet: lo que conservas es el
+    documento Excel que exportas.
+  </footer>
+
+  <div id="modal-config" class="modal" hidden>
+    <div class="modal-content">
+      <h2>Configuración: valor de la UVT por año</h2>
+      <p class="hint">
+        La DIAN publica el valor de la UVT de cada año gravable mediante resolución
+        (normalmente entre noviembre y diciembre del año anterior). Los oficiales ya vienen
+        incluidos en la app. Si falta el de un año, agrégalo aquí cuando lo confirmes oficialmente:
+        la app lo <strong>recuerda en este navegador</strong> hasta que lo cambies o lo quites, y
+        también viaja dentro del documento Excel que exportes. Es lo único que la app recuerda (no
+        guarda nada de tus declaraciones). Si usas otro navegador o equipo tendrás que ponerlo de
+        nuevo; para dejarlo fijo en la carpeta de la app, agrégalo en src/dominio/taxRules.js.
+      </p>
+      <table class="tabla-uvt" id="tabla-uvt"></table>
+      <div class="grid">
+        <label>Año
+          <input type="number" id="nuevo_uvt_anio" step="1" />
+        </label>
+        <label>Valor UVT (COP)
+          <input type="number" id="nuevo_uvt_valor" step="1" min="0" />
+        </label>
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btn-guardar-uvt" class="btn btn-primary">Guardar</button>
+        <button type="button" id="btn-cerrar-config" class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "vendor/pdf.worker.min.js";
+    }
+  </script>
+  <!-- Capas, de adentro hacia afuera; cada una solo usa las anteriores (ver README, "Arquitectura") -->
+  <!-- Dominio: reglas tributarias y cálculo (sin DOM, sin archivos, sin red) -->
+  <script src="src/dominio/taxRules.js"></script>
+  <script src="src/dominio/calculator.js"></script>
+  <script src="src/dominio/declaracion.js"></script>
+  <script src="src/dominio/formulario210.js"></script>
+  <!-- Infraestructura: lo que toca el exterior (navegador, archivos, Excel, PDF) -->
+  <script src="src/infraestructura/uvtGuardados.js"></script>
+  <script src="src/infraestructura/lectorArchivos.js"></script>
+  <script src="src/infraestructura/documento.js"></script>
+  <!-- Aplicación: interpretar los archivos de la DIAN y proponer valores -->
+  <script src="src/aplicacion/importer.js"></script>
+  <script src="src/aplicacion/exogena.js"></script>
+  <!-- Presentación: la interfaz -->
+  <script src="src/presentacion/app.js"></script>
+</body>
+</html>

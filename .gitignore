@@ -1,0 +1,7 @@
+# Documentos personales/tributarios (certificados, exógena, declaraciones): nunca al repositorio.
+*.xlsx
+*.xls
+*.csv
+*.pdf
+pruebas-locales/
+node_modules/
