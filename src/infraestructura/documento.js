@@ -20,6 +20,10 @@ const CAMPOS_DOCUMENTO = [
   { id: "p_activos", etiqueta: "Total activos (patrimonio bruto)", ruta: "patrimonio.activos", tipo: "numero" },
   { id: "p_pasivos", etiqueta: "Total pasivos (deudas)", ruta: "patrimonio.pasivos", tipo: "numero" },
   { id: "i_lab_bruto", etiqueta: "Salarios y pagos laborales (ingresos brutos)", ruta: "cedulaGeneral.laboral.ingresosBrutos", tipo: "numero" },
+  { id: "i_lab_honorarios", etiqueta: "Honorarios y servicios sin costos (con renta exenta del 25%)", ruta: "cedulaGeneral.laboral.honorariosSinCostos", tipo: "numero" },
+  { id: "i_hon_bruto", etiqueta: "Honorarios y servicios con costos: ingresos brutos (casilla 43)", ruta: "cedulaGeneral.honorarios.ingresosBrutos", tipo: "numero" },
+  { id: "i_hon_incrngo", etiqueta: "Honorarios y servicios con costos: ingresos no constitutivos de renta (casilla 44)", ruta: "cedulaGeneral.honorarios.ingresosNoConstitutivos", tipo: "numero" },
+  { id: "i_hon_costos", etiqueta: "Honorarios y servicios con costos: costos y gastos procedentes (casilla 45)", ruta: "cedulaGeneral.honorarios.costosYGastos", tipo: "numero" },
   { id: "i_lab_aportes", etiqueta: "Aportes obligatorios a salud y pensión", ruta: "cedulaGeneral.laboral.aportesObligatoriosSaludPension", tipo: "numero" },
   { id: "i_lab_cesantias", etiqueta: "Auxilio de cesantías e intereses (total)", ruta: "cedulaGeneral.laboral.cesantiasEIntereses", tipo: "numero" },
   { id: "i_lab_promedio6m", etiqueta: "Ingreso laboral promedio últimos 6 meses", ruta: "cedulaGeneral.laboral.ingresoLaboralPromedio6Meses", tipo: "numero" },
@@ -50,6 +54,10 @@ const CAMPOS_DOCUMENTO = [
   { id: "r_anticipo", etiqueta: "Anticipo de renta del año anterior", ruta: "anticipos.anticipoRentaAnioAnterior", tipo: "numero" },
   { id: "r_saldofavor", etiqueta: "Saldo a favor del año anterior", ruta: "anticipos.saldoAFavorAnioAnterior", tipo: "numero" },
   { id: "tope1Ingresos", etiqueta: "Tope 1 - Ingresos de la exógena de la DIAN (referencia)", ruta: "referenciasDian.tope1Ingresos", tipo: "numero" },
+  { id: "tope2Patrimonio", etiqueta: "Tope 2 - Patrimonio de la exógena de la DIAN (referencia)", ruta: "referenciasDian.tope2Patrimonio", tipo: "numero" },
+  { id: "tope3ConsumosTarjeta", etiqueta: "Tope 3 - Consumos con tarjeta de la exógena de la DIAN (referencia)", ruta: "referenciasDian.tope3ConsumosTarjeta", tipo: "numero" },
+  { id: "tope4Movimientos", etiqueta: "Tope 4 - Consignaciones e inversiones de la exógena de la DIAN (referencia)", ruta: "referenciasDian.tope4Movimientos", tipo: "numero" },
+  { id: "tope5Compras", etiqueta: "Tope 5 - Compras de la exógena de la DIAN (referencia)", ruta: "referenciasDian.tope5Compras", tipo: "numero" },
 ];
 
 function leerPorRuta(obj, ruta) {

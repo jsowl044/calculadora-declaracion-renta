@@ -41,7 +41,37 @@ function compararConTope1(tope1Dian, ingresosApp) {
   };
 }
 
+// Cuando no hay relación laboral (sin salarios), un mismo dependiente da UNA sola de las dos deducciones: la del 10%
+// (art. 387 ET) o la adición de 72 UVT (art. 336 num. 3 ET); con salarios se aplican ambas (instructivo del
+// Formulario 210, casillas 32 y 139). Sin salarios se prueban las dos formas de repartir los dependientes y se queda
+// la que deja menos impuesto (a igual impuesto, la de menor base gravable).
 function calcular(declaracion) {
+  const cg = declaracion.cedulaGeneral;
+  const nDependientes = cg.deduccionesEspeciales.numeroDependientes || 0;
+  const maximoAdicion = LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_MAX_DEPENDIENTES;
+  if (nDependientes <= 0 || (cg.laboral.ingresosBrutos || 0) > 0) {
+    return calcularConDependientes(declaracion, { modo: "ambas", deduccion10: nDependientes > 0, n72: Math.min(nDependientes, maximoAdicion) });
+  }
+  const soloAdicion = calcularConDependientes(declaracion, { modo: "una_u_otra", deduccion10: false, n72: Math.min(nDependientes, maximoAdicion) });
+  const conDeduccion10 = calcularConDependientes(declaracion, { modo: "una_u_otra", deduccion10: true, n72: Math.min(nDependientes - 1, maximoAdicion) });
+  const dif = conDeduccion10.impuesto.impuestoTotal - soloAdicion.impuesto.impuestoTotal;
+  const gana10 =
+    dif < -0.5 || (Math.abs(dif) <= 0.5 && conDeduccion10.rentaLiquidaGravableCedulaGeneral < soloAdicion.rentaLiquidaGravableCedulaGeneral - 0.5);
+  return gana10 ? conDeduccion10 : soloAdicion;
+}
+
+// Texto que explica, sin relación laboral, cómo se repartieron los dependientes entre las dos deducciones.
+function explicarDependientes(opciones, nDependientes) {
+  if (opciones.modo !== "una_u_otra" || nDependientes <= 0) return "";
+  const inicio = "Sin relación laboral (sin salarios), cada dependiente da una sola de las dos deducciones. ";
+  if (!opciones.deduccion10) {
+    return `${inicio}La app usó la adición de 72 UVT con ${opciones.n72} dependiente${opciones.n72 === 1 ? "" : "s"} (deja menos impuesto que la deducción del 10%).`;
+  }
+  if (nDependientes === 1) return `${inicio}La app usó la deducción del 10% (deja menos impuesto que la adición de 72 UVT).`;
+  return `${inicio}La app usó la deducción del 10% con un dependiente y la adición de 72 UVT con ${opciones.n72} más (la combinación que deja menos impuesto).`;
+}
+
+function calcularConDependientes(declaracion, opcionesDependientes) {
   const anio = declaracion.anioGravable;
   const uvt = getUvt(anio);
   const avisos = [];
@@ -65,9 +95,17 @@ function calcular(declaracion) {
   // Cada columna del Formulario 210 (laboral, capital, no laboral) resta sus propios
   // ingresos no constitutivos de renta; capital y no laboral además restan sus "costos y
   // deducciones procedentes" (la laboral no tiene esa línea en el formulario real).
-  const ingresosLaborales = cg.laboral.ingresosBrutos || 0;
+  // Casilla 32 = salarios (355) + honorarios sin costos (356): ambos conservan la renta exenta del 25%.
+  const ingresosLaborales = (cg.laboral.ingresosBrutos || 0) + (cg.laboral.honorariosSinCostos || 0);
   const incrngoLaboral = cg.laboral.aportesObligatoriosSaludPension || 0;
   const rentaLiquidaLaboral = Math.max(ingresosLaborales - incrngoLaboral, 0);
+
+  // Casillas 43 a 46: rentas de trabajo sin relación laboral CON costos y gastos (sin la renta exenta del 25%).
+  const hon = cg.honorarios || {};
+  const ingresosHonorarios = hon.ingresosBrutos || 0;
+  const incrngoHonorarios = hon.ingresosNoConstitutivos || 0;
+  const costosHonorarios = hon.costosYGastos || 0;
+  const rentaLiquidaHonorarios = Math.max(ingresosHonorarios - incrngoHonorarios - costosHonorarios, 0);
 
   const ingresosCapital =
     (cg.capital.intereses || 0) + (cg.capital.arriendos || 0) + (cg.capital.otrosCapital || 0);
@@ -81,10 +119,10 @@ function calcular(declaracion) {
   const costosNoLaboral = cg.noLaboral.costosYDeduccionesProcedentes || 0;
   const rentaLiquidaNoLaboral = Math.max(ingresosNoLaborales - incrngoNoLaboral - costosNoLaboral, 0);
 
-  const ingresosBrutosCedulaGeneral = ingresosLaborales + ingresosCapital + ingresosNoLaborales;
-  const incrngo = incrngoLaboral + incrngoCapital + incrngoNoLaboral;
-  // Suma de las tres rentas líquidas por columna (equivale a la casilla 91 del Formulario 210).
-  const ingresoNetoCedulaGeneral = rentaLiquidaLaboral + rentaLiquidaCapital + rentaLiquidaNoLaboral;
+  const ingresosBrutosCedulaGeneral = ingresosLaborales + ingresosHonorarios + ingresosCapital + ingresosNoLaborales;
+  const incrngo = incrngoLaboral + incrngoHonorarios + incrngoCapital + incrngoNoLaboral;
+  // Suma de las rentas líquidas por columna (equivale a la casilla 91 del Formulario 210 antes de exentas y deducciones).
+  const ingresoNetoCedulaGeneral = rentaLiquidaLaboral + rentaLiquidaHonorarios + rentaLiquidaCapital + rentaLiquidaNoLaboral;
 
   // --- Deducciones especiales (con sus topes individuales) ---
   const de = cg.deduccionesEspeciales;
@@ -96,10 +134,12 @@ function calcular(declaracion) {
     de.saludPrepagada || 0,
     enPesos(LIMITS.SALUD_PREPAGADA_TOPE_ANUAL_UVT)
   );
-  const dependientes =
-    (de.numeroDependientes || 0) > 0
-      ? Math.min(0.10 * ingresosLaborales, enPesos(LIMITS.DEPENDIENTES_TOPE_ANUAL_UVT))
-      : 0;
+  // Deducción del 10% (art. 387 ET) sobre los ingresos de la columna 1; si no hay, sobre los de honorarios con costos
+  // (casilla 51). Va o no según el reparto de dependientes que se esté probando (ver `calcular`).
+  const baseDeduccionDependientes = ingresosLaborales > 0 ? ingresosLaborales : ingresosHonorarios;
+  const dependientes = opcionesDependientes.deduccion10
+    ? Math.min(0.1 * baseDeduccionDependientes, enPesos(LIMITS.DEPENDIENTES_TOPE_ANUAL_UVT))
+    : 0;
   const aportesVoluntarios = Math.min(
     de.aportesVoluntariosPensionAFC || 0,
     Math.min(
@@ -121,6 +161,27 @@ function calcular(declaracion) {
   );
   const cesantiasExenta = cesantiasEIntereses * porcentajeExencionCesantias;
 
+  // --- Reparto de las deducciones entre las dos columnas de trabajo ---
+  // Se imputan primero a la columna 1 (salarios y honorarios sin costos) hasta su renta líquida; lo que sobre pasa a la
+  // columna de honorarios con costos (casillas 47, 50 y 51) hasta la suya. Es el mismo orden en que el SI reparte el cupo.
+  const repartir = (items, capacidad) => {
+    let libre = Math.max(capacidad, 0);
+    const asignado = {};
+    const resto = [];
+    items.forEach(([nombre, valor]) => {
+      const toma = Math.min(valor, libre);
+      asignado[nombre] = toma;
+      libre -= toma;
+      resto.push([nombre, valor - toma]);
+    });
+    return { asignado, resto, total: Object.values(asignado).reduce((s, v) => s + v, 0) };
+  };
+  const col1 = repartir(
+    [["aportesVoluntarios", aportesVoluntarios], ["interesesVivienda", interesesVivienda], ["saludPrepagada", saludPrepagada], ["dependientes", dependientes]],
+    rentaLiquidaLaboral
+  );
+  const col2 = repartir(col1.resto, rentaLiquidaHonorarios);
+
   // --- Renta exenta laboral 25% ---
   // Instructivo oficial del Formulario 210 (numeral 9, casilla 36): "El cálculo de esta renta
   // exenta se efectuará una vez se detraiga del valor total de los pagos laborales recibidos
@@ -128,10 +189,7 @@ function calcular(declaracion) {
   // LAS DEDUCCIONES [totalDeduccionesEspecialesSinTope] y las demás rentas exentas [cesantías]
   // diferentes a la establecida en este numeral." Restar solo las cesantías, sin las deducciones,
   // no cuadra con el instructivo: hay que restar ambas.
-  const rentaExentaLaboral25SinTope = 0.25 * Math.max(
-    rentaLiquidaLaboral - cesantiasExenta - totalDeduccionesEspecialesSinTope,
-    0
-  );
+  const rentaExentaLaboral25SinTope = 0.25 * Math.max(rentaLiquidaLaboral - cesantiasExenta - col1.total, 0);
   const rentaExentaLaboral25 = Math.min(
     rentaExentaLaboral25SinTope,
     enPesos(LIMITS.RENTA_EXENTA_LABORAL_25_TOPE_ANUAL_UVT)
@@ -152,37 +210,39 @@ function calcular(declaracion) {
   // de renta (33 + 44 + 59 + 76) y toma el 40% de ese resultado, sin pasar de 1.340 UVT. NO resta
   // los costos y deducciones procedentes. Ese cupo único se reparte en cascada (primero rentas de
   // trabajo, luego trabajo sin relación laboral, capital y no laborales). Esta app solo modela
-  // exenciones/deducciones de la columna laboral, así que es la única que reclama cupo. Además, la
-  // casilla 41 no puede superar la renta líquida de trabajo (casilla 34).
+  // exenciones/deducciones de las dos columnas de trabajo, que son las que reclaman cupo. La casilla
+  // 41 no puede superar la renta líquida de trabajo (34) ni la 53 la de honorarios con costos (46).
   const baseLimiteGlobal = Math.max(ingresosBrutosCedulaGeneral - incrngo, 0);
-  const sumaDeduccionesYExentas = totalDeduccionesEspecialesSinTope + totalRentasExentasSinTope;
   const limiteGlobal = Math.min(
     LIMITS.LIMITE_GLOBAL_PORCENTAJE_INGRESO * baseLimiteGlobal,
     enPesos(LIMITS.LIMITE_GLOBAL_TOPE_ANUAL_UVT)
   );
+  // Columna 1 (casilla 41): salarios y honorarios sin costos
+  const sumaColumna1 = col1.total + totalRentasExentasSinTope;
   const cupoLaboral = Math.min(limiteGlobal, rentaLiquidaLaboral);
-  let factorAjuste = 1;
-  if (sumaDeduccionesYExentas > cupoLaboral && sumaDeduccionesYExentas > 0) {
-    factorAjuste = cupoLaboral / sumaDeduccionesYExentas;
-  }
-  const totalDeduccionesEspeciales = totalDeduccionesEspecialesSinTope * factorAjuste;
-  const totalRentasExentas = totalRentasExentasSinTope * factorAjuste;
+  const limitadoColumna1 = Math.min(sumaColumna1, cupoLaboral);
+  const factor1 = sumaColumna1 > 0 ? limitadoColumna1 / sumaColumna1 : 1;
+  const totalRentasExentas = totalRentasExentasSinTope * factor1;
   // Casilla 42: renta líquida ordinaria de las rentas de trabajo (34 − 41).
-  const rentaLiquidaOrdinariaLaboral = Math.max(
-    rentaLiquidaLaboral - totalDeduccionesEspeciales - totalRentasExentas,
-    0
-  );
+  const rentaLiquidaOrdinariaLaboral = Math.max(rentaLiquidaLaboral - limitadoColumna1, 0);
+  // Columna de honorarios con costos (casilla 53): usa el cupo que dejó la columna 1
+  const cupoHonorarios = Math.max(limiteGlobal - limitadoColumna1, 0);
+  const limitadoColumna2 = Math.min(col2.total, rentaLiquidaHonorarios, cupoHonorarios);
+  const factor2 = col2.total > 0 ? limitadoColumna2 / col2.total : 1;
+  // Casilla 57: renta líquida ordinaria de las rentas de trabajo sin relación laboral (54 − 56; no se modelan pérdidas)
+  const rentaLiquidaOrdinariaHonorarios = Math.max(rentaLiquidaHonorarios - limitadoColumna2, 0);
+  const totalDeduccionesEspeciales = col1.total * factor1 + col2.total * factor2;
+  const totalLimitado = limitadoColumna1 + limitadoColumna2;
+  const sumaDeduccionesYExentas = sumaColumna1 + col2.total;
+  const factorAjuste = sumaDeduccionesYExentas > 0 ? totalLimitado / sumaDeduccionesYExentas : 1;
 
   // Beneficio adicional por dependiente (casilla 139): se suma DESPUÉS del límite global, no está
   // sujeto a él. Máximo 4 dependientes, y su valor no puede ser mayor que la renta líquida ordinaria
-  // de las rentas de trabajo (casillas 42 + 57), según el instructivo oficial.
-  const numeroDependientesParaBeneficio = Math.min(
-    de.numeroDependientes || 0,
-    LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_MAX_DEPENDIENTES
-  );
+  // de las rentas de trabajo (casillas 42 + 57), según el instructivo oficial. Cuántos dependientes
+  // lo reciben depende de si también se pidió la deducción del 10% (ver `calcular`).
   const beneficioAdicionalPorDependientes = Math.min(
-    numeroDependientesParaBeneficio * enPesos(LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_UVT),
-    rentaLiquidaOrdinariaLaboral
+    opcionesDependientes.n72 * enPesos(LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_UVT),
+    rentaLiquidaOrdinariaLaboral + rentaLiquidaOrdinariaHonorarios
   );
 
   // 1% de compras con factura electrónica (casilla 28): tampoco sujeto al límite global.
@@ -194,8 +254,7 @@ function calcular(declaracion) {
 
   const rentaLiquidaGravableCedulaGeneral = Math.max(
     ingresoNetoCedulaGeneral -
-      totalDeduccionesEspeciales -
-      totalRentasExentas -
+      totalLimitado -
       beneficioAdicionalPorDependientes -
       descuentoComprasFacturaElectronica,
     0
@@ -253,14 +312,15 @@ function calcular(declaracion) {
   const saldoNeto =
     impuestoTotal - totalRetenciones - anticipoAnioAnterior - saldoAFavorAnioAnterior;
 
-  // --- Verificación informativa de obligación de declarar ---
-  const topesObligacion = OBLIGACION_DECLARAR_TOPES_UVT;
+  // --- ¿Obligado a declarar? (ver obligacion.js) ---
   const ingresosBrutosTotales =
     ingresosBrutosCedulaGeneral + pensionIngresoAnual + dividendosGravables + dividendosAntiguos;
-  const obligadoADeclarar = {
-    porPatrimonio: valorUvt ? patrimonioBruto > enPesos(topesObligacion.patrimonioBruto) : null,
-    porIngresos: valorUvt ? ingresosBrutosTotales > enPesos(topesObligacion.ingresosBrutos) : null,
-  };
+  const obligacion = evaluarObligacionDeclarar({
+    valorUvt,
+    ingresosApp: ingresosBrutosTotales,
+    patrimonioApp: patrimonioBruto,
+    referenciasDian: declaracion.referenciasDian,
+  });
 
   const cruceDian = compararConTope1(
     declaracion.referenciasDian && declaracion.referenciasDian.tope1Ingresos,
@@ -274,6 +334,10 @@ function calcular(declaracion) {
     ingresos: {
       ingresosLaborales,
       rentaLiquidaLaboral,
+      ingresosHonorarios,
+      incrngoHonorarios,
+      costosHonorarios,
+      rentaLiquidaHonorarios,
       ingresosCapital,
       costosCapital,
       rentaLiquidaCapital,
@@ -308,6 +372,12 @@ function calcular(declaracion) {
       limiteGlobal,
       factorAjuste,
       rentaLiquidaOrdinariaLaboral,
+      rentaLiquidaOrdinariaHonorarios,
+      // Reparto de las deducciones entre la columna 1 (casillas 35 a 40) y la de honorarios con costos (47 a 52)
+      columna1: col1.asignado,
+      columna2: col2.asignado,
+      limitadoColumna1,
+      limitadoColumna2,
       totalDeduccionesEspeciales,
       totalRentasExentas,
       beneficioAdicionalPorDependientes,
@@ -315,6 +385,13 @@ function calcular(declaracion) {
       descuentoComprasFacturaElectronica,
     },
     rentaLiquidaGravableCedulaGeneral,
+    // Cómo se repartieron los dependientes entre la deducción del 10% y la adición de 72 UVT
+    dependientes: {
+      modo: opcionesDependientes.modo,
+      usaDeduccion10: opcionesDependientes.deduccion10,
+      adicion72: opcionesDependientes.n72,
+      explicacion: explicarDependientes(opcionesDependientes, de.numeroDependientes || 0),
+    },
     impuesto: {
       baseSinDividendosPesos,
       baseSinDividendosUVT,
@@ -327,7 +404,7 @@ function calcular(declaracion) {
     anticipos: { anticipoAnioAnterior, saldoAFavorAnioAnterior },
     saldoNeto,
     saldoTipo: saldoNeto > 0 ? "a_pagar" : saldoNeto < 0 ? "a_favor" : "cero",
-    obligadoADeclarar,
+    obligacion,
     cruceDian,
   };
 }

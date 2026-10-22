@@ -106,8 +106,8 @@
                     <em>Pestaña Patrimonio</em>
                   </li>
                   <li>
-                    <strong>Costos y descuentos de ingresos no laborales</strong>
-                    <span>Estampillas, ICA y gastos, con el soporte de cada pagador.</span>
+                    <strong>Costos y descuentos de honorarios e ingresos no laborales</strong>
+                    <span>Estampillas, ICA y gastos, con el soporte de cada pagador. Si eres independiente, decide si declaras con o sin costos.</span>
                     <em>Pestaña Ingresos</em>
                   </li>
                 </ul>
@@ -210,6 +210,34 @@
             cesantías (100% si el promedio mensual no supera 350 UVT, con un porcentaje
             decreciente hasta 650 UVT).
           </p>
+          <h3>Honorarios y servicios de independientes (sin relación laboral)</h3>
+          <p class="hint">
+            Si prestas servicios por tu cuenta (contrato de prestación de servicios, honorarios), el
+            instructivo de la DIAN te pide <strong>escoger una de dos opciones</strong> para el mismo
+            ingreso: <strong>sin costos</strong>, con la renta exenta del 25%, o <strong>con costos y
+            gastos</strong>, sin esa renta exenta. Pon cada ingreso en un solo lugar.
+          </p>
+          <div class="grid">
+            <label>Sin costos: honorarios y servicios (con renta exenta del 25%)
+              <input type="number" id="i_lab_honorarios" min="0" step="any" />
+            </label>
+            <label>Con costos: ingresos brutos por honorarios y servicios
+              <input type="number" id="i_hon_bruto" min="0" step="any" />
+            </label>
+            <label>Con costos: ingresos no constitutivos de renta (aportes obligatorios)
+              <input type="number" id="i_hon_incrngo" min="0" step="any" />
+            </label>
+            <label>Con costos: costos y gastos procedentes
+              <input type="number" id="i_hon_costos" min="0" step="any" />
+            </label>
+          </div>
+          <p class="hint">
+            Como referencia: la renta exenta equivale al 25% de lo que cobras (con tope de 790 UVT);
+            si tus costos documentados son menores, normalmente conviene «sin costos». Los aportes
+            obligatorios de lo que declaras «sin costos» van en «Aportes obligatorios a salud y pensión»,
+            arriba. Los costos deben estar soportados con factura electrónica o documento equivalente;
+            si superan el 60% de los ingresos, la DIAN pide marcar la casilla 140 (tope indicativo).
+          </p>
           <h3>Rentas de capital</h3>
           <div class="grid">
             <label>Intereses y rendimientos financieros
@@ -247,7 +275,9 @@
             "Costos y deducciones procedentes" son los gastos que realmente incurriste para
             producir ese ingreso (ej. gastos asociados a honorarios, costo de bienes vendidos
             en rentas no laborales) — se restan antes de calcular el impuesto. No confundir con
-            las deducciones especiales de la siguiente pestaña.
+            las deducciones especiales de la siguiente pestaña. Los honorarios que prestas como
+            independiente van mejor en la sección de arriba; este campo es para lo que la DIAN ubica
+            como renta no laboral.
           </p>
         </section>
 
@@ -451,6 +481,7 @@
   <script src="src/dominio/calculator.js"></script>
   <script src="src/dominio/declaracion.js"></script>
   <script src="src/dominio/formulario210.js"></script>
+  <script src="src/dominio/obligacion.js"></script>
   <!-- Infraestructura: lo que toca el exterior (navegador, archivos, Excel, PDF) -->
   <script src="src/infraestructura/uvtGuardados.js"></script>
   <script src="src/infraestructura/lectorArchivos.js"></script>

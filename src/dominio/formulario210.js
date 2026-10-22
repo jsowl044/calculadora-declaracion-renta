@@ -27,8 +27,8 @@ const SECCIONES_210 = [
     titulo: "Cédula general · Rentas de trabajo",
     casillas: [
       [32, "Ingresos brutos de las Rentas de trabajo", COMO_DIGITAR, true],
-      [355, "Salarios (el SI habilita la 355 y la 356 al diligenciar la 32; no salen en el PDF; la 356, Honorarios sin costos, queda en 0)", COMO_DIGITAR, false],
-      [356, "Honorarios sin costos (el SI la habilita al diligenciar la 32; no sale en el PDF)", COMO_DIGITAR, false],
+      [355, "Salarios (el SI habilita la 355 y la 356 al diligenciar la 32; no salen en el PDF)", COMO_DIGITAR, false],
+      [356, "Honorarios sin costos, con la renta exenta del 25% (el SI la habilita al diligenciar la 32; no sale en el PDF)", COMO_DIGITAR, false],
       [33, "Ingresos no constitutivos de renta de las Rentas de trabajo", COMO_DIGITAR, true],
       [34, "Renta líquida de las Rentas de trabajo (32 − 33)", COMO_CALCULADA, true],
       [35, "Rentas exentas de las Rentas de trabajo – Aportes voluntarios AFC, FVP y/o AVC", COMO_DIGITAR, false],
@@ -39,6 +39,24 @@ const SECCIONES_210 = [
       [40, "Total deducciones imputables a las Rentas de trabajo (38 + 39)", COMO_CALCULADA, false],
       [41, "Rentas exentas y/o deducciones imputables a las Rentas de trabajo (Limitadas)", "La calcula el SI respetando el límite del 40% (máximo 1.340 UVT)", true],
       [42, "Renta líquida ordinaria de las Rentas de trabajo (34 − 41)", COMO_CALCULADA, true],
+    ],
+  },
+  {
+    titulo: "Cédula general · Rentas de trabajo sin relación laboral (honorarios con costos)",
+    casillas: [
+      [43, "Ingresos brutos de las Rentas de trabajo que no provengan de una relación laboral o legal y reglamentaria", COMO_DIGITAR, false],
+      [44, "Ingresos no constitutivos de renta de las Rentas de trabajo sin relación laboral", COMO_DIGITAR, false],
+      [45, "Costos y deducciones procedentes de las Rentas de trabajo sin relación laboral", COMO_DIGITAR, false],
+      [46, "Renta líquida de las Rentas de trabajo sin relación laboral (43 − 44 − 45)", COMO_CALCULADA, false],
+      [47, "Rentas exentas de las Rentas de trabajo sin relación laboral – Aportes voluntarios AFC, FVP y/o AVC", COMO_DIGITAR, false],
+      [49, "Total rentas exentas de las Rentas de trabajo sin relación laboral (47 + 48)", COMO_CALCULADA, false],
+      [50, "Deducciones imputables a las Rentas de trabajo sin relación laboral – Intereses de vivienda", COMO_DIGITAR, false],
+      [51, "Deducciones imputables a las Rentas de trabajo sin relación laboral – Otras deducciones imputables", COMO_DIGITAR_APP, false],
+      [52, "Total deducciones imputables a las Rentas de trabajo sin relación laboral (50 + 51)", COMO_CALCULADA, false],
+      [53, "Rentas exentas y/o deducciones imputables a las Rentas de trabajo sin relación laboral (Limitadas)", "La calcula el SI con el cupo que dejó la casilla 41", false],
+      [54, "Renta líquida ordinaria del ejercicio de las Rentas de trabajo sin relación laboral (43 − 44 − 45 − 53)", COMO_CALCULADA, false],
+      [55, "Pérdida líquida ordinaria del ejercicio de las Rentas de trabajo sin relación laboral (44 + 45 − 43)", COMO_CALCULADA, false],
+      [57, "Renta líquida ordinaria de las Rentas de trabajo sin relación laboral (54 − 56)", COMO_CALCULADA, false],
     ],
   },
   {
@@ -119,7 +137,8 @@ const SECCIONES_210 = [
 const NOTAS_210 = [
   "El formulario aproxima cada casilla al múltiplo de mil más cercano; las casillas que calcula el SI salen de esos valores ya aproximados, por eso pueden diferir en unos miles de los totales sin aproximar que muestra la pestaña Resultado.",
   "Casilla 133 (anticipo renta para el año gravable siguiente): esta app no la calcula. Si tu impuesto neto de renta (casilla 126) es mayor que cero, el SI la pide: 25%, 50% o 75% del impuesto neto menos las retenciones (instructivo, casilla 133). Los totales 134, 136 y 137 de esta hoja no la incluyen.",
-  "Esta app no modela: rentas de trabajo sin relación laboral o legal y reglamentaria (casillas 43 a 57; los honorarios se cuentan en rentas no laborales, casilla 74), ganancias ocasionales (112 a 115, 127, 128), descuentos tributarios como donaciones (122 a 125), renta presuntiva (98, tarifa 0%), compensaciones de pérdidas (94, 95) ni sanciones (135). Si te aplican, complétalos tú.",
+  "Honorarios y servicios de independientes: los que declaras «sin costos» van en la casilla 32 (con la 356) y conservan la renta exenta del 25%; los «con costos» van en las casillas 43 a 57 y no tienen esa renta exenta (el instructivo exige escoger una de las dos opciones).",
+  "Esta app no modela: ganancias ocasionales (112 a 115, 127, 128), descuentos tributarios como donaciones (122 a 125), renta presuntiva (98, tarifa 0%), compensaciones de pérdidas (56, 89, 94, 95) ni sanciones (135). Si te aplican, complétalos tú.",
   "No es asesoría profesional: verifica estos valores con un contador o directamente en el SI de la DIAN antes de presentar.",
 ];
 
@@ -146,16 +165,35 @@ function construirCasillas210(d, r) {
   v[31] = Math.max(v[29] - v[30], 0);
 
   // Rentas de trabajo. Las casillas 35 a 40 solo se diligencian si la renta líquida (34) es mayor que 0.
+  // La casilla 32 es la suma de la 355 (salarios) y la 356 (honorarios sin costos).
   v[32] = R(ing.ingresosLaborales);
+  v[355] = Math.min(R(cg.laboral.ingresosBrutos || 0), v[32]);
+  v[356] = v[32] - v[355];
   v[33] = R(cg.laboral.aportesObligatoriosSaludPension || 0);
   v[34] = Math.max(v[32] - v[33], 0);
   const hayRentaLaboral = v[34] > 0;
-  v[35] = hayRentaLaboral ? R(x.aportesVoluntarios) : 0;
+  const c1 = x.columna1; // lo que de las deducciones absorbe la columna 1 (el resto pasa a la de honorarios con costos)
+  v[35] = hayRentaLaboral ? R(c1.aportesVoluntarios) : 0;
   v[36] = hayRentaLaboral ? R(x.totalRentasExentasSinTope) : 0;
   v[37] = v[35] + v[36];
-  v[38] = hayRentaLaboral ? R(x.interesesVivienda) : 0;
-  v[39] = hayRentaLaboral ? R(x.saludPrepagada + x.dependientes) : 0;
+  v[38] = hayRentaLaboral ? R(c1.interesesVivienda) : 0;
+  v[39] = hayRentaLaboral ? R(c1.saludPrepagada + c1.dependientes) : 0;
   v[40] = v[38] + v[39];
+
+  // Rentas de trabajo que no provienen de una relación laboral, con costos y gastos (casillas 43 a 57).
+  // Sin la renta exenta del 25%: el instructivo obliga a escoger entre costos y esa renta exenta.
+  v[43] = R(ing.ingresosHonorarios);
+  v[44] = R(ing.incrngoHonorarios);
+  v[45] = R(ing.costosHonorarios);
+  v[46] = Math.max(v[43] - v[44] - v[45], 0);
+  const hayRentaHonorarios = v[46] > 0;
+  const c2 = x.columna2;
+  v[47] = hayRentaHonorarios ? R(c2.aportesVoluntarios) : 0;
+  v[48] = 0;
+  v[49] = v[47] + v[48];
+  v[50] = hayRentaHonorarios ? R(c2.interesesVivienda) : 0;
+  v[51] = hayRentaHonorarios ? R(c2.saludPrepagada + c2.dependientes) : 0;
+  v[52] = v[50] + v[51];
 
   // Rentas de capital y no laborales (la app no modela sus exentas ni deducciones imputables)
   v[58] = R(ing.ingresosCapital);
@@ -176,26 +214,29 @@ function construirCasillas210(d, r) {
 
   // Casilla 41: el SI toma el 40% de (ingresos brutos − ingresos no constitutivos), máximo 1.340 UVT,
   // y no deja que supere la renta líquida de trabajo (34) ni la suma de las casillas 37 y 40.
-  const baseLimite = Math.max(v[32] + v[58] + v[74] - v[33] - v[59] - v[76], 0);
+  const baseLimite = Math.max(v[32] + v[43] + v[58] + v[74] - v[33] - v[44] - v[59] - v[76], 0);
   const cupo = Math.min(LIMITS.LIMITE_GLOBAL_PORCENTAJE_INGRESO * baseLimite, LIMITS.LIMITE_GLOBAL_TOPE_ANUAL_UVT * uvt);
   v[41] = R(Math.min(v[34], v[37] + v[40], cupo));
   v[42] = Math.max(v[34] - v[41], 0);
+  // Casilla 53: el cupo que dejó la 41, sin pasar de la renta líquida (46) ni de la suma de las casillas 49 y 52.
+  v[53] = R(Math.min(v[46], v[49] + v[52], Math.max(cupo - v[41], 0)));
+  v[54] = Math.max(v[43] - v[44] - v[45] - v[53], 0);
+  v[55] = Math.max(v[44] + v[45] - v[43], 0);
+  v[56] = 0;
+  v[57] = Math.max(v[54] - v[56], 0);
 
   // Compras con factura electrónica (297 -> 28) y dependientes (138 -> 139): fuera del límite
   v[297] = R(cg.comprasFacturaElectronica || 0);
   v[28] = R(Math.min(LIMITS.COMPRAS_FACTURA_ELECTRONICA_TASA * v[297], LIMITS.COMPRAS_FACTURA_ELECTRONICA_TOPE_ANUAL_UVT * uvt));
   const nDependientes = cg.deduccionesEspeciales.numeroDependientes || 0;
   v[138] = nDependientes;
-  v[139] = Math.min(
-    R(Math.min(nDependientes, LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_MAX_DEPENDIENTES) * LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_UVT * uvt),
-    v[42]
-  );
-  v[355] = v[32];
-  v[356] = 0;
+  // Cuántos dependientes reciben la adición de 72 UVT lo decide el motor (sin relación laboral, cada dependiente da
+  // la deducción del 10% o esta adición, no ambas); no puede superar la suma de las casillas 42 y 57.
+  v[139] = Math.min(R(r.dependientes.adicion72 * LIMITS.BENEFICIO_ADICIONAL_POR_DEPENDIENTE_UVT * uvt), v[42] + v[57]);
 
-  // Totales de la cédula general (casillas 53, 57, 94, 95 y 96 valen 0 en esta app)
-  v[91] = v[41] + v[42] + v[69] + v[73] + v[86] + v[90];
-  v[92] = v[28] + v[41] + v[69] + v[86] + v[139];
+  // Totales de la cédula general (las casillas 94, 95 y 96 valen 0 en esta app)
+  v[91] = v[41] + v[42] + v[53] + v[57] + v[69] + v[73] + v[86] + v[90];
+  v[92] = v[28] + v[41] + v[53] + v[69] + v[86] + v[139];
   v[93] = Math.max(v[91] - v[92], 0);
   v[97] = v[93];
 
@@ -246,5 +287,12 @@ function construirCasillas210(d, r) {
     como: "No la calcula esta app; ver la nota sobre la casilla 133",
   });
 
-  return { disponible: true, uvt, valores: v, filas, notas: NOTAS_210, avisos: [] };
+  // Tope indicativo de costos (art. 336-1 ET, casilla 140): para estas rentas se estiman en el 60% de los ingresos.
+  const avisos = [];
+  if (v[43] > 0 && v[45] > 0.6 * v[43]) {
+    avisos.push(
+      "Los costos y gastos de tus honorarios (casilla 45) superan el 60% de los ingresos (casilla 43), el tope indicativo del art. 336-1 ET. Al digitar la casilla 45 el SI te pedirá marcar la casilla 140 con una X, y esos costos deben estar soportados con factura electrónica de venta o documento equivalente."
+    );
+  }
+  return { disponible: true, uvt, valores: v, filas, notas: NOTAS_210, avisos };
 }

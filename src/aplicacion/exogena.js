@@ -11,6 +11,7 @@ const ETIQUETAS_CAMPOS_EXOGENA = {
   i_lab_cesantias: "Auxilio de cesantías e intereses (total)",
   i_lab_aportes: "Aportes obligatorios a salud y pensión",
   i_lab_promedio6m: "Ingreso laboral promedio últimos 6 meses (Art. 206 num. 4)",
+  i_hon_bruto: "Honorarios y servicios con costos (rentas de trabajo sin relación laboral, casilla 43)",
   i_cap_intereses: "Intereses y rendimientos financieros",
   i_cap_arriendos: "Arriendos",
   i_cap_otros: "Otros ingresos de capital",
@@ -29,7 +30,7 @@ const ETIQUETAS_CAMPOS_EXOGENA = {
 
 // Los campos que suman al "Tope 1 - Ingresos" de la DIAN (ingresos brutos de todas las cédulas).
 const CAMPOS_INGRESOS_BRUTOS_EXOGENA = [
-  "i_lab_bruto", "i_cap_intereses", "i_cap_arriendos", "i_cap_otros",
+  "i_lab_bruto", "i_hon_bruto", "i_cap_intereses", "i_cap_arriendos", "i_cap_otros",
   "i_nolab_honorarios", "i_nolab_otros", "pen_anual",
 ];
 
@@ -44,7 +45,7 @@ const NOTA_R76_EXOGENA =
 const NOTA_R100_EXOGENA =
   "Quien reporta estos aportes es quien te paga la pensión, así que se asignaron a la cédula de pensiones (casilla 100).";
 const NOTA_R43_EXOGENA =
-  "La DIAN lo ubica en la casilla 43 (rentas de trabajo sin relación laboral, con costos y gastos). Esta app no modela esa columna y lo cuenta en rentas no laborales (casilla 74): el impuesto no cambia si no reclamas exentas ni deducciones contra ese ingreso. Al digitar en la DIAN, pásalo a la casilla 43.";
+  "La DIAN lo ubica en la casilla 43: rentas de trabajo sin relación laboral, con costos y gastos y SIN la renta exenta del 25%. Si no vas a restar costos, suele convenir declararlo «sin costos» (con la renta exenta del 25%): en ese caso pasa este valor al campo «Honorarios sin costos» de la pestaña Ingresos. Los costos y aportes de este ingreso también se digitan allí.";
 const NOTA_INMUEBLE_EXOGENA =
   "El avalúo catastral es la referencia de la DIAN: para efectos fiscales el valor patrimonial de un inmueble depende de su costo fiscal y de tu porcentaje de propiedad. Confírmalo.";
 
@@ -105,7 +106,7 @@ function clasificarPartidaExogena(it, ctx) {
   } else if (tiene("r99")) {
     r = una("pen_anual");
   } else if (tiene("r43")) {
-    r = una("i_nolab_honorarios", { nota: NOTA_R43_EXOGENA });
+    r = una("i_hon_bruto", { nota: NOTA_R43_EXOGENA });
   } else if (tiene("r58")) {
     r = una(
       /arrend|canon/.test(det)

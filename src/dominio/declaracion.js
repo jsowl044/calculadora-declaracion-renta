@@ -16,12 +16,20 @@ function plantillaDeclaracion() {
     },
     cedulaGeneral: {
       laboral: {
-        ingresosBrutos: 0,
+        ingresosBrutos: 0, // salarios y demás pagos de una relación laboral (casilla 355)
+        honorariosSinCostos: 0, // honorarios y servicios de independientes SIN costos, con renta exenta del 25% (casilla 356)
         aportesObligatoriosSaludPension: 0,
         cesantiasEIntereses: 0,
         ingresoLaboralPromedio6Meses: 0,
         rentaExentaManualActiva: false,
         rentaExentaManualValor: 0,
+      },
+      // Rentas de trabajo que no provienen de una relación laboral, CON costos y gastos en lugar de la renta
+      // exenta del 25% (casillas 43 a 57).
+      honorarios: {
+        ingresosBrutos: 0,
+        ingresosNoConstitutivos: 0,
+        costosYGastos: 0,
       },
       capital: {
         intereses: 0,
@@ -62,9 +70,14 @@ function plantillaDeclaracion() {
       anticipoRentaAnioAnterior: 0,
       saldoAFavorAnioAnterior: 0,
     },
-    // Cifras de la información exógena de la DIAN usadas solo para cruzar (no entran al cálculo).
+    // Topes de la información exógena de la DIAN, usados solo como referencia (no entran al cálculo):
+    // el Tope 1 para cruzar ingresos y los cinco para saber si hay que declarar.
     referenciasDian: {
       tope1Ingresos: 0,
+      tope2Patrimonio: 0,
+      tope3ConsumosTarjeta: 0,
+      tope4Movimientos: 0,
+      tope5Compras: 0,
     },
   };
 }

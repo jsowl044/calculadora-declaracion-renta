@@ -435,12 +435,55 @@ details.partidas-exogena ul {
   background: var(--accent-bg);
 }
 
-.resultado .seccion-titulo {
+.seccion-titulo {
   margin-top: 14px;
   font-size: 12px;
   text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* ¿Obligado a declarar? */
+.veredicto {
+  margin: 8px 0;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-left-width: 5px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.veredicto.si { background: var(--ambar-bg); border-color: #f0d9a6; border-left-color: var(--ambar); }
+.veredicto.no { background: var(--accent-bg); border-color: #b7dfc3; border-left-color: var(--primary); }
+.veredicto.pendiente { background: var(--azul-bg); border-color: #c7d2f0; border-left-color: var(--azul); }
+
+.tabla-obligacion {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 8px 0;
+  font-size: 12px;
+}
+
+.tabla-obligacion th,
+.tabla-obligacion td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tabla-obligacion th {
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.resultado-criterio {
+  font-weight: 600;
+}
+
+.resultado-criterio.supera { color: var(--ambar); }
+.resultado-criterio.no-supera { color: var(--primary-dark); }
+.resultado-criterio.sin-dato { color: var(--text-muted); font-weight: 400; }
 
 .avisos {
   margin-bottom: 12px;

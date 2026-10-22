@@ -2,7 +2,7 @@
 // configuración. La app no guarda nada: lo que la persona conserva es el documento que exporta.
 
 // Versión visible al pie de la página: sirve para saber qué copia de la app se está usando.
-const VERSION_APP = "2026.10.22-1";
+const VERSION_APP = "2026.10.22-2";
 
 aplicarUvtGuardados();
 
@@ -42,6 +42,10 @@ function cargarFormulario(d) {
   q("p_pasivos").value = d.patrimonio.pasivos;
 
   q("i_lab_bruto").value = d.cedulaGeneral.laboral.ingresosBrutos;
+  q("i_lab_honorarios").value = d.cedulaGeneral.laboral.honorariosSinCostos || 0;
+  q("i_hon_bruto").value = (d.cedulaGeneral.honorarios || {}).ingresosBrutos || 0;
+  q("i_hon_incrngo").value = (d.cedulaGeneral.honorarios || {}).ingresosNoConstitutivos || 0;
+  q("i_hon_costos").value = (d.cedulaGeneral.honorarios || {}).costosYGastos || 0;
   q("i_lab_aportes").value = d.cedulaGeneral.laboral.aportesObligatoriosSaludPension;
   q("i_lab_cesantias").value = d.cedulaGeneral.laboral.cesantiasEIntereses;
   q("i_lab_promedio6m").value = d.cedulaGeneral.laboral.ingresoLaboralPromedio6Meses;
@@ -106,6 +110,12 @@ function leerFormulario() {
   d.patrimonio.pasivos = num("p_pasivos");
 
   d.cedulaGeneral.laboral.ingresosBrutos = num("i_lab_bruto");
+  d.cedulaGeneral.laboral.honorariosSinCostos = num("i_lab_honorarios");
+  d.cedulaGeneral.honorarios = {
+    ingresosBrutos: num("i_hon_bruto"),
+    ingresosNoConstitutivos: num("i_hon_incrngo"),
+    costosYGastos: num("i_hon_costos"),
+  };
   d.cedulaGeneral.laboral.aportesObligatoriosSaludPension = num("i_lab_aportes");
   d.cedulaGeneral.laboral.cesantiasEIntereses = num("i_lab_cesantias");
   d.cedulaGeneral.laboral.ingresoLaboralPromedio6Meses = num("i_lab_promedio6m");
@@ -224,10 +234,12 @@ function renderizarResultado() {
   html += `<div class="seccion-titulo">Cédula general</div>`;
   html += linea("Ingresos brutos cédula general", r.ingresos.ingresosBrutosCedulaGeneral);
   html += linea("Ingresos no constitutivos de renta (aportes obligatorios)", r.ingresos.incrngo);
-  if (r.ingresos.costosCapital || r.ingresos.costosNoLaboral) {
+  if (r.ingresos.costosCapital || r.ingresos.costosNoLaboral || r.ingresos.costosHonorarios) {
     html += linea(
-      "Costos y deducciones procedentes (capital + no laboral)",
-      r.ingresos.costosCapital + r.ingresos.costosNoLaboral
+      r.ingresos.costosHonorarios
+        ? "Costos y deducciones procedentes (honorarios + capital + no laboral)"
+        : "Costos y deducciones procedentes (capital + no laboral)",
+      r.ingresos.costosHonorarios + r.ingresos.costosCapital + r.ingresos.costosNoLaboral
     );
   }
   html += linea("Ingreso neto cédula general", r.ingresos.ingresoNetoCedulaGeneral, "subtotal");
@@ -249,6 +261,9 @@ function renderizarResultado() {
       "Beneficio adicional por dependientes (72 UVT c/u, fuera del límite global)",
       r.deducciones.beneficioAdicionalPorDependientes
     );
+  }
+  if (r.dependientes.explicacion) {
+    html += `<div class="hint">${esc(r.dependientes.explicacion)}</div>`;
   }
   if (r.deducciones.descuentoComprasFacturaElectronica) {
     html += linea(
@@ -297,18 +312,50 @@ function renderizarResultado() {
     Math.abs(r.saldoNeto)
   )}</span></div>`;
 
-  html += `<div class="seccion-titulo">Referencia: ¿obligado a declarar?</div>`;
-  if (r.obligadoADeclarar.porPatrimonio === null) {
-    html += `<div class="hint">No se puede verificar sin un valor de UVT configurado para este año.</div>`;
-  } else {
-    html += `<div class="hint">Supera tope de patrimonio bruto (4.500 UVT): ${
-      r.obligadoADeclarar.porPatrimonio ? "Sí" : "No"
-    }. Supera tope de ingresos brutos (1.400 UVT): ${
-      r.obligadoADeclarar.porIngresos ? "Sí" : "No"
-    }. Hay otros topes (consumos con tarjeta, consignaciones, compras) que esta herramienta no verifica todavía — revisa la resolución de la DIAN del año correspondiente.</div>`;
-  }
+  html += `<div class="seccion-titulo">¿Estás obligado a declarar?</div>`;
+  html += htmlObligacionCompleta(r.obligacion);
 
   q("resultado").innerHTML = html;
+}
+
+// --- ¿Obligado a declarar? (la regla está en dominio/obligacion.js) ---
+function htmlVeredictoObligacion(o) {
+  if (!o.disponible) {
+    return `<div class="hint">No se puede revisar sin un valor de UVT configurado para este año gravable.</div>`;
+  }
+  if (o.estado === "obligado") {
+    return `<div class="veredicto si"><strong>Sí, según estos datos debes declarar.</strong> Superas: ${o.motivos.map(esc).join("; ")}.</div>`;
+  }
+  if (o.estado === "no_obligado") {
+    return `<div class="veredicto no"><strong>No estás obligado a declarar según los cinco topes revisados.</strong> Aun así puedes declarar de forma voluntaria.</div>`;
+  }
+  return `<div class="veredicto pendiente"><strong>Falta información para saber si debes declarar.</strong> No superas los topes que se pudieron revisar, pero falta: ${o.pendientes
+    .map(esc)
+    .join("; ")}. La exógena de la DIAN trae esos datos: súbela en la pestaña Documentos.</div>`;
+}
+
+function htmlObligacionCompleta(o) {
+  if (!o.disponible) return htmlVeredictoObligacion(o);
+  const resultado = { true: ["Supera", "supera"], false: ["No supera", "no-supera"], null: ["Sin dato", "sin-dato"] };
+  const filas = o.criterios
+    .map((c) => {
+      const [texto, clase] = resultado[c.supera];
+      return `<tr>
+        <td>${esc(c.nombre)}</td>
+        <td>${esc(c.regla)} <span class="hint">(${money(c.topePesos)})</span></td>
+        <td>${c.valorApp ? money(c.valorApp) : "—"}</td>
+        <td>${c.valorDian ? money(c.valorDian) : "—"} <span class="hint">${esc(c.topeDian)}</span></td>
+        <td class="resultado-criterio ${clase}">${texto}</td>
+      </tr>`;
+    })
+    .join("");
+  return `
+    ${htmlVeredictoObligacion(o)}
+    <table class="tabla-obligacion">
+      <tr><th>Criterio</th><th>Debes declarar si superas</th><th>Tus datos</th><th>Según la DIAN</th><th>Resultado</th></tr>
+      ${filas}
+    </table>
+    ${o.notas.map((n) => `<div class="hint">${esc(n)}</div>`).join("")}`;
 }
 
 // --- Estado de la declaración abierta ---
@@ -608,10 +655,10 @@ function compararTope(detalle, resultado) {
 function renderizarTopesImportados(topes, meta, { avisosMeta: mostrarAvisosMeta = true, cruce: mostrarCruce = true } = {}) {
   if (topes.length === 0) return "";
   const avisosMeta = avisosMetadatos(meta);
-  // El Tope de ingresos solo se toma como referencia si el archivo es del mismo año y persona.
+  // Los topes solo se toman como referencia si el archivo es del mismo año y persona.
   const topeIngresos = topes.find((t) => /ingreso/i.test(t.detalle));
-  if (topeIngresos && avisosMeta.ok) {
-    declaracionActual.referenciasDian = { tope1Ingresos: topeIngresos.valor };
+  if (avisosMeta.ok && topes.length) {
+    declaracionActual.referenciasDian = { ...plantillaDeclaracion().referenciasDian, ...referenciasDianDesdeTopes(topes) };
   }
   const resultado = calcular(leerFormulario());
   const filasTopes = topes
@@ -799,11 +846,20 @@ function renderizarResultadoImportExogena(info) {
       : "Este reporte no trae partidas con casilla sugerida para importar, solo los topes de referencia."
   } Si esperabas ver el detalle por tercero, revisa que hayas descargado el reporte completo desde tu cuenta de la DIAN; mientras tanto diligencia tus datos en las demás pestañas.</div>`;
 
+  // ¿Debes declarar? Con solo los topes de este archivo (si es del mismo año y persona que la declaración abierta).
+  const anioArchivo = info.meta.anio || parseInt(leerFormulario().anioGravable, 10);
+  const obligacion = evaluarObligacionDeclarar({ valorUvt: getUvt(anioArchivo) || 0, referenciasDian: referenciasDianDesdeTopes(info.topes) });
+  const htmlObligacion =
+    avisosMeta.ok && obligacion.disponible && info.topes.length
+      ? `<div class="seccion-titulo">¿Debes declarar?</div>${htmlVeredictoObligacion(obligacion)}`
+      : "";
+
   cont.innerHTML = `
     <p><strong>Reporte de información exógena de la DIAN</strong>${info.meta.anio ? ` · año ${info.meta.anio}` : ""}${
     c.nombre ? ` · ${esc(c.nombre)}` : ""
   }${info.meta.documento ? ` · documento ${esc(info.meta.documento)}` : ""}</p>
     ${avisosMeta.html}
+    ${htmlObligacion}
     ${hayLineas ? htmlRevision : htmlSinPartidas}
     ${htmlDonaciones}
     ${htmlSinUbicar}

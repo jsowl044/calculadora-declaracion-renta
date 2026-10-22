@@ -81,7 +81,7 @@ La primera pestaña de la app trae esta misma guía.
 | Dependientes | **Lo informas tú** | Reducen la base; necesitan soporte |
 | Casas, carros, inversiones | **Lo informas tú** | Costo de compra y mejoras, cesantías en fondos, dinero prestado |
 | Deudas con particulares | **Lo informas tú** | Las que ningún banco reporta |
-| Costos y descuentos de ingresos no laborales | **Lo informas tú** | Con el soporte de cada pagador |
+| Costos y descuentos de honorarios e ingresos no laborales | **Lo informas tú** | Con el soporte de cada pagador; si eres independiente, decide si declaras con o sin costos |
 | Informe de facturas electrónicas | No hace falta | La exógena ya trae ese total |
 
 La exógena solo contiene lo que reportan terceros. La propia DIAN advierte en el archivo que no es
@@ -91,15 +91,21 @@ indispensable y que no reemplaza tu conocimiento de tu situación económica.
 
 - **Cédula general:** rentas de trabajo, de capital y no laborales, con sus ingresos no constitutivos de
   renta y sus costos y deducciones procedentes.
+- **Independientes** (honorarios y servicios sin relación laboral), con las dos opciones que exige el
+  instructivo de la DIAN: **sin costos**, con la renta exenta del 25% (casillas 32 y 356), o **con costos y
+  gastos** en su propia columna (casillas 43 a 57), sin esa renta exenta. Las deducciones se reparten entre las
+  dos columnas dentro de un único cupo del 40%.
 - **Deducciones y rentas exentas:** intereses de vivienda, medicina prepagada, dependientes, aportes
   voluntarios (AFC/AVC), renta exenta laboral del 25% y cesantías, con el límite global del 40% y 1.340 UVT.
 - **Beneficios fuera de ese límite:** 72 UVT adicionales por dependiente (hasta 4) y el 1% de las compras
-  con factura electrónica (tope 240 UVT).
+  con factura electrónica (tope 240 UVT). Sin relación laboral, cada dependiente da la deducción del 10% **o**
+  los 72 UVT, no ambas: la app elige la combinación que deja menos impuesto y te lo explica.
 - **Pensiones**, con la exención de las primeras 1.000 UVT mensuales.
 - **Impuesto** con la tabla progresiva del Art. 241 del Estatuto Tributario; **dividendos** por el
   Art. 242.
 - **Retenciones, anticipo y saldo a favor del año anterior**, hasta llegar al saldo a pagar o a favor.
-- **Referencia de si estás obligado a declarar** (topes de patrimonio e ingresos).
+- **¿Estás obligado a declarar?** Revisa los cinco topes de los Arts. 592 y 594-3 del Estatuto Tributario
+  (patrimonio, ingresos, consumos con tarjeta, compras y consignaciones). Los tres últimos los trae la exógena.
 
 Las reglas corresponden al año gravable 2023 en adelante (Ley 2277 de 2022).
 
@@ -108,12 +114,11 @@ Las reglas corresponden al año gravable 2023 en adelante (Ley 2277 de 2022).
 - Ganancias ocasionales.
 - El anticipo del impuesto para el año siguiente (casilla 133).
 - Descuentos tributarios, como el de donaciones.
-- Las rentas de trabajo sin relación laboral en su propia columna (casillas 43 a 57): las cuenta como
-  rentas no laborales (casilla 74) y avisa. El impuesto es el mismo si no reclamas exentas ni
-  deducciones contra ese ingreso.
 - Renta presuntiva ni compensación de pérdidas.
-- Todas las condiciones de «obligado a declarar»: solo revisa patrimonio e ingresos, no consumos con
-  tarjeta, consignaciones ni IVA.
+- Todas las condiciones de «obligado a declarar»: revisa los cinco topes, pero no si eres responsable de IVA,
+  no residente o del Régimen Simple, ni las reglas especiales de asalariados (art. 593).
+- Independientes: no compara por ti las dos opciones (con o sin costos): tú decides dónde pones cada ingreso.
+  Esta parte se contrastó con las fórmulas del instructivo, pero todavía no con una declaración presentada.
 - El valor fiscal de inmuebles y vehículos: propone el avalúo de la exógena, pero para una persona no
   obligada a llevar contabilidad se declara el mayor entre costo de adquisición, costo fiscal,
   autoavalúo y avalúo catastral. Esa verificación la haces tú.

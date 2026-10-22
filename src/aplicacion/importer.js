@@ -164,6 +164,19 @@ function esFilaDeTope(texto) {
   return /^tope\s*\d+/i.test(texto.trim());
 }
 
+// Traduce las filas "Tope N - ..." (lista de { detalle, valor }) a las referencias que guarda la declaración
+// para saber si hay que declarar (ver dominio/obligacion.js). Se ubican por el número del tope.
+function referenciasDianDesdeTopes(topes) {
+  const campos = { 1: "tope1Ingresos", 2: "tope2Patrimonio", 3: "tope3ConsumosTarjeta", 4: "tope4Movimientos", 5: "tope5Compras" };
+  const referencias = {};
+  (topes || []).forEach((t) => {
+    const m = String(t.detalle || "").trim().match(/^tope\s*(\d+)/i);
+    const campo = m && campos[Number(m[1])];
+    if (campo && Number.isFinite(t.valor)) referencias[campo] = t.valor;
+  });
+  return referencias;
+}
+
 function esFilaDeTotalGeneral(texto) {
   return /^total(es)?\b/i.test(texto.trim());
 }
