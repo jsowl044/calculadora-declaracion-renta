@@ -17,8 +17,9 @@ entrega las **casillas del Formulario 210** listas para digitar en la DIAN.
 - **No guarda tus datos.** Lo que conservas es un documento Excel que tú exportas.
 - **Importa la exógena de la DIAN** y propone el valor de cada campo (ingresos, retenciones, saldos de
   bancos, deudas, saldo a favor del año anterior...). Tú revisas y confirmas; nunca llena nada sola.
+- **Te dice si estás obligado a declarar**, con los cinco topes de la DIAN.
 - **Calcula el impuesto** de la cédula general, de pensiones y de dividendos, con deducciones, rentas
-  exentas y beneficios.
+  exentas y beneficios, incluido el caso de **independientes** (con o sin costos).
 - **Entrega las casillas del Formulario 210** con los números y nombres oficiales, y te dice cuáles
   digitas tú y cuáles calcula la DIAN.
 - **Encadena los años:** crea la declaración del año siguiente con lo que persiste (patrimonio, saldo a
@@ -51,10 +52,12 @@ la **versión**, útil para confirmar que usas la copia actualizada.
 2. **Súbela en la pestaña *Documentos*.** Elige el archivo y pulsa **Analizar archivo**.
 3. **Revisa lo que encontró.** Para cada campo verás el valor de la DIAN y eliges **Reemplazar**,
    **Sumar** o **No aplicar**; luego pulsa **Aplicar al formulario**. La app también compara tus ingresos
-   con el «Tope 1» de la DIAN y avisa si te falta incluir algo.
+   con el «Tope 1» de la DIAN y avisa si te falta incluir algo. Arriba del panel verás si, con los topes de
+   tu exógena, estás obligado a declarar.
 4. **Completa lo que la exógena no trae** en las demás pestañas: dependientes, deducciones, patrimonio
-   no reportado, costos de ingresos no laborales (ver [Qué necesitas reunir](#qué-necesitas-reunir)).
-5. **Mira la pestaña *Resultado*:** impuesto, saldo a pagar o a favor y avisos.
+   no reportado, costos de ingresos no laborales. Si eres independiente, decide si declaras tus honorarios
+   con o sin costos (ver [Qué necesitas reunir](#qué-necesitas-reunir)).
+5. **Mira la pestaña *Resultado*:** impuesto, saldo a pagar o a favor, si estás obligado a declarar y avisos.
 6. **Exporta el documento** con **Exportar documento (Excel)**. Es tu copia de la declaración: la hoja
    «Formulario 210» trae las casillas y la hoja «Datos» permite reabrirla después.
 7. **Digita las casillas en el formulario de la DIAN.** El botón **Copiar resumen para la DIAN** deja los
@@ -152,9 +155,17 @@ esos valores ya aproximados. La app hace lo mismo, así que lo que ves debe coin
 el formulario.
 
 Se contrastó casilla por casilla con declaraciones del Formulario 210 presentadas por contadores
-(años gravables 2024 y 2025): las 62 casillas que calcula la app coincidieron en las tres declaraciones
-comparadas (186 comparaciones), y también se cumplen las fórmulas del instructivo oficial. Aun así, cada
-persona tiene un caso distinto: trata el resultado como una guía y verifícalo.
+(años gravables 2024 y 2025): las casillas de salarios, capital, rentas no laborales, pensiones y
+liquidación coincidieron en las tres declaraciones comparadas (186 comparaciones). En una cuarta
+declaración (AG2025), con los datos que la exógena no trae, la única diferencia fue de $1.000 en un
+ingreso (el contador digitó $972 menos que la exógena), que se arrastra a unas pocas casillas derivadas;
+el impuesto y el saldo a favor coincidieron. Además, miles de declaraciones generadas al azar cumplen las
+fórmulas del instructivo oficial.
+
+Lo que **no** se ha contrastado con una declaración presentada: la parte de independientes (casillas 43 a
+57 y la regla de dependientes sin relación laboral), que se verificó contra el instructivo y con casos
+calculados a mano. Aun así, cada persona tiene un caso distinto: trata el resultado como una guía y
+verifícalo.
 
 ## Arquitectura
 
@@ -175,6 +186,7 @@ src/
     calculator.js             motor de cálculo
     declaracion.js            modelo de la declaración y año siguiente
     formulario210.js          casillas del Formulario 210 (nombres y fórmulas oficiales)
+    obligacion.js             ¿debo declarar? (topes de los Arts. 592 y 594-3)
   infraestructura/            lo que toca el exterior
     uvtGuardados.js           recordar los UVT agregados (localStorage)
     lectorArchivos.js         leer PDF (pdf.js) y Excel/CSV (SheetJS)
