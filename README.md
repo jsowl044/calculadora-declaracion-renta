@@ -2,6 +2,8 @@
 
 *A free, offline, privacy-first web app to estimate Colombian personal income tax and prepare the DIAN's Formulario 210.*
 
+[![Pruebas](https://github.com/jsowl044/calculadora-declaracion-renta/actions/workflows/tests.yml/badge.svg)](https://github.com/jsowl044/calculadora-declaracion-renta/actions/workflows/tests.yml)
+
 Calculadora de apoyo para **personas naturales residentes en Colombia**. Toma la información que la DIAN
 ya tiene sobre ti (la «exógena»), te ayuda a completar lo que falta, calcula el impuesto de renta y te
 entrega las **casillas del Formulario 210** listas para digitar en la DIAN.
@@ -44,6 +46,12 @@ Un navegador moderno (probada con Google Chrome). No necesitas internet, servido
 
 La carpeta es portable: puedes copiarla a una USB y abrirla en otro equipo. Al pie de la página aparece
 la **versión**, útil para confirmar que usas la copia actualizada.
+
+### Pruébala con datos de ejemplo
+
+No necesitas tu exógena para ver cómo funciona: sube `ejemplos/exogena-ejemplo.xlsx` en la pestaña
+*Documentos*. Es un archivo **inventado** (nombres, documentos y valores falsos) con el mismo formato que el
+reporte de la DIAN.
 
 ## Cómo usarla, paso a paso
 
@@ -159,13 +167,33 @@ Se contrastó casilla por casilla con declaraciones del Formulario 210 presentad
 liquidación coincidieron en las tres declaraciones comparadas (186 comparaciones). En una cuarta
 declaración (AG2025), con los datos que la exógena no trae, la única diferencia fue de $1.000 en un
 ingreso (el contador digitó $972 menos que la exógena), que se arrastra a unas pocas casillas derivadas;
-el impuesto y el saldo a favor coincidieron. Además, miles de declaraciones generadas al azar cumplen las
-fórmulas del instructivo oficial.
+el impuesto y el saldo a favor coincidieron. **Esas comparaciones no se pueden reproducir públicamente**:
+usan declaraciones reales de personas, que no se publican.
+
+Lo que sí se puede reproducir: 4.000 declaraciones generadas al azar cumplen las fórmulas del instructivo
+oficial, y los casos calculados a mano coinciden (ver [Pruebas](#pruebas)).
 
 Lo que **no** se ha contrastado con una declaración presentada: la parte de independientes (casillas 43 a
 57 y la regla de dependientes sin relación laboral), que se verificó contra el instructivo y con casos
 calculados a mano. Aun así, cada persona tiene un caso distinto: trata el resultado como una guía y
 verifícalo.
+
+## Pruebas
+
+Las pruebas usan solo **datos inventados** y no necesitan instalar nada (Node 18 o más reciente):
+
+```bash
+npm test
+```
+
+Cubren el cálculo del impuesto (la tabla del Art. 241 contra una copia escrita aparte y casos calculados a
+mano), las casillas (4.000 declaraciones al azar deben cumplir las fórmulas del instructivo), la importación
+de la exógena de ejemplo, «¿debo declarar?», independientes, el documento Excel y la regla de capas. Un flujo
+de GitHub Actions las corre en cada cambio.
+
+El Excel `ejemplos/exogena-ejemplo.xlsx` se vuelve a generar con `npm run ejemplo`. En este repositorio no hay
+pruebas con la app abierta en un navegador: las que la contrastan con declaraciones reales se mantienen fuera,
+porque usan documentos personales.
 
 ## Arquitectura
 
@@ -198,6 +226,10 @@ src/
     app.js                    formulario, importación, resultado, exportar/abrir
     style.css
 vendor/                       librerías de terceros (SheetJS, pdf.js), sin CDN
+tests/                        pruebas con datos inventados (npm test)
+ejemplos/                     exogena-ejemplo.xlsx, un Excel de ejemplo con datos inventados
+.github/workflows/            pruebas automáticas (GitHub Actions)
+package.json                  solo define npm test y npm run ejemplo
 docs/                         capturas de este README
 LICENSE                       licencia MIT del código
 ```
@@ -211,7 +243,8 @@ Notas para quien quiera modificarla:
 - Para leer un tipo de archivo nuevo, la lectura va en `infraestructura/lectorArchivos.js` y su
   interpretación en `aplicacion/`; la pantalla que lo muestra va en `presentacion/app.js`.
 - El `.gitignore` excluye `*.xlsx`, `*.xls`, `*.csv` y `*.pdf` para que documentos personales usados en
-  pruebas no se suban por accidente.
+  pruebas no se suban por accidente. La única excepción es `ejemplos/exogena-ejemplo.xlsx`, que tiene datos
+  inventados.
 
 ## Si reportas un problema o contribuyes
 
@@ -222,6 +255,9 @@ personales. Describe el caso con cifras inventadas.
 
 El código de este proyecto se distribuye bajo la licencia [MIT](LICENSE): puedes usarlo, copiarlo y
 modificarlo, sin garantía de ningún tipo. Las librerías de `vendor/` conservan sus propias licencias.
+
+**Aviso:** las cifras, reglas y resultados que produce esta aplicación son estimados informativos y no
+constituyen asesoría tributaria, legal ni contable.
 
 ## Créditos y licencias de terceros
 

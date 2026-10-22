@@ -1,0 +1,14 @@
+{
+  "name": "calculadora-declaracion-renta",
+  "version": "1.0.0",
+  "description": "Calculadora sin internet para estimar la declaración de renta de personas naturales en Colombia (Formulario 210)",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "test": "node tests/run.js",
+    "ejemplo": "node tests/generar-ejemplo.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

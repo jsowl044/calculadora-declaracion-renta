@@ -1,5 +1,7 @@
 # Documentos personales/tributarios (certificados, exógena, declaraciones): nunca al repositorio.
 *.xlsx
+# Única excepción: el Excel de ejemplo con datos INVENTADOS (ver tests/generar-ejemplo.js)
+!ejemplos/exogena-ejemplo.xlsx
 *.xls
 *.csv
 *.pdf
